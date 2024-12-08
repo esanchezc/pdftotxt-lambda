@@ -16,4 +16,13 @@ Resources:
         Variables:
           TARGET_BUCKET: gl-inter-store-esanchez
       Layers:
-        - 'arn:aws:lambda:us-east-2:197444073346:layer:pypdf'      
+        - 'arn:aws:lambda:us-east-2:197444073346:layer:tika:1'
+      Events:
+        S3PdfUpload:
+          Type: S3
+          Properties:
+            Bucket: pdf-source-docs-esanchez
+            Events: s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Suffix: .pdf      
