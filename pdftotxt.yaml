@@ -21,7 +21,7 @@ Resources:
         S3PdfUpload:
           Type: S3
           Properties:
-            Bucket: pdf-source-docs-esanchez # Replace with your actual source bucket name
+            Bucket: pdf-source-docs-esanchez
             Events: s3:ObjectCreated:*
             Filter:
               S3Key:
