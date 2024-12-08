@@ -1,61 +1,19 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 Description: An AWS Serverless Specification template describing your function.
-
-Parameters:
-  SourceBucketName:
-    Type: String
-    Description: Name of the S3 bucket where PDF files are uploaded
-
 Resources:
-  LambdaExecutionRole:
-    Type: 'AWS::IAM::Role'
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: 'sts:AssumeRole'
-      ManagedPolicyArns:
-        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
-        - 'arn:aws:iam::aws:policy/AWSLambdaExecute'
-      Policies:
-        - PolicyName: S3Access
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action: 
-                  - 's3:PutObject'
-                  - 's3:GetObject'
-                Resource: 
-                  - !Sub 'arn:aws:s3:::${SourceBucketName}/*'
-                  - 'arn:aws:s3:::gl-inter-store/*'
-
-  pdftotxtFunction:
+  pdftotxt:
     Type: 'AWS::Serverless::Function'
     Properties:
-      FunctionName: pdftotxt
       Handler: lambda_function.lambda_handler
       Runtime: python3.10
       CodeUri: .
-      Description: 'PDF to Text conversion Lambda function'
+      Description: ''
       MemorySize: 512
       Timeout: 900
-      Role: !GetAtt LambdaExecutionRole.Arn
+      Role: 'arn:aws:iam::197444073346:role/search-engine-cloudformation-role'
       Environment:
         Variables:
           TARGET_BUCKET: gl-inter-store
-      Events:
-        S3PdfUpload:
-          Type: S3
-          Properties:
-            Bucket: !Ref SourceBucketName
-            Events: s3:ObjectCreated:Put
-            Filter:
-              S3Key:
-                Suffix: .pdf
       Layers:
         - 'arn:aws:lambda:us-east-2:197444073346:layer:tika:1'
