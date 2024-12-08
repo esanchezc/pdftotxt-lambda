@@ -2,11 +2,16 @@ import boto3
 import json
 import os
 import logging
-from tika import parser
+import pkg_resources
+import pypdf
+from pypdf import PdfReader
 from io import BytesIO
+from io import StringIO
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
 
 def lambda_handler(event, context):
     logger.info('********************** Environment and Event variables are *********************')
@@ -19,8 +24,11 @@ def lambda_handler(event, context):
         'body': json.dumps('Execution is now complete')
     }
 
+
 def extract_content(event):
+
     try:
+        #Read the target bucket from the lambda environment variable
         targetBucket = os.environ['TARGET_BUCKET']
     except:
         targetBucket = "gl-inter-store-esanchez"
@@ -29,33 +37,28 @@ def extract_content(event):
     bucket = event['Records'][0]['s3']['bucket']['name']
     key = event['Records'][0]['s3']['object']['key']
     print('The s3 bucket is', bucket, 'and the file name is', key)
-    
     s3client = boto3.client('s3')
+    #csv_buffer = StringIO()
     response = s3client.get_object(Bucket=bucket, Key=key)
-    pdf_content = response["Body"].read()
+    obj = s3client.get_object(Bucket=bucket, Key=key)
+    pdffile = response["Body"]
+    print('The binary pdf file type is', type(pdffile))
 
-    # Parse PDF with Tika
-    parsed = parser.from_buffer(pdf_content)
+    reader = PdfReader(BytesIO(pdffile.read()))
+    info = reader.metadata
+    title = info.title
+    author = info.author
+    date = info.creation_date
+    page = reader.pages[0]
+    text = page.extract_text()
+    print("Extracted text is ", text)
+    print("Metadata is ", info)
+    print("Title is", title)
+    print("Author is", author)
+    print("Creation date is", date)
+    content = str(title) + "\n" + str(author) + "\n" + str(date) + "\n" + str(text)
+    print("Content is\n" + content)
     
-    # Extract metadata and content
-    metadata = parsed.get("metadata", {})
-    content = parsed.get("content", "No content found")
-    
-    # Format the output
-    output = f"""Title: {metadata.get('title', 'N/A')}
-Author: {metadata.get('Author', 'N/A')}
-Creation Date: {metadata.get('Creation-Date', 'N/A')}
-Content:
-{content}"""
-    
-    print("Extracted text: ", content[:200] + "...") # Log first 200 chars of content
-    print("Metadata: ", metadata)
-    
-    # Save to target bucket
-    s3client.put_object(
-        Bucket=targetBucket,
-        Key=f"{key}.txt",
-        Body=output
-    )
+    s3client.put_object(Bucket=targetBucket, Key=key+".txt", Body=content)
 
     print('All done, returning from extract content method')
