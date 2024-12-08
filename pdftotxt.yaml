@@ -21,10 +21,23 @@ Resources:
       ManagedPolicyArns:
         - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
         - 'arn:aws:iam::aws:policy/AWSLambdaExecute'
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 's3:PutObject'
+                  - 's3:GetObject'
+                Resource: 
+                  - !Sub 'arn:aws:s3:::${SourceBucketName}/*'
+                  - 'arn:aws:s3:::gl-inter-store/*'
 
-  pdftotxt:
+  pdftotxtFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
+      FunctionName: pdftotxt
       Handler: lambda_function.lambda_handler
       Runtime: python3.10
       CodeUri: .
@@ -45,4 +58,4 @@ Resources:
               S3Key:
                 Suffix: .pdf
       Layers:
-        - "arn:aws:lambda:us-east-2:197444073346:layer:tika:1"
+        - 'arn:aws:lambda:us-east-2:197444073346:layer:tika:1'
